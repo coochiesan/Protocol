@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Protocol">
+<meta name="theme-color" content="#0a0c0f">
+<title>Protocol</title>
+<style>
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0c0f;--surf:#111318;--surf2:#181c22;--surf3:#1e2530;
+  --border:#1e2530;--border2:#2a3340;
+  --text:#e8eaf0;--text2:#8892a4;--text3:#4a5568;
+  --blue:#3b82f6;--blue-l:#1e3a5f;--blue-ll:#0d1f35;
+  --green:#10b981;--green-l:#0d3d2e;
+  --amber:#f59e0b;--amber-l:#3d2a08;
+  --purple:#a855f7;--purple-l:#2d1a4a;
+  --red:#ef4444;--red-l:#3d1414;
+  --teal:#14b8a6;--teal-l:#0d332f;
+  --pink:#ec4899;--pink-l:#3d1229;
+  --radius:10px;--radius-sm:6px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+body.light{
+  --bg:#F5F4F0;--surf:#FFFFFF;--surf2:#F1EFE8;--surf3:#E8E6DF;
+  --border:#E2DFD6;--border2:#D3D0C7;
+  --text:#1A1A18;--text2:#5F5E5A;--text3:#9CA39A;
+  --blue:#185FA5;--blue-l:#E6F1FB;--blue-ll:#B5D4F4;
+  --green:#3B6D11;--green-l:#EAF3DE;
+  --amber:#854F0B;--amber-l:#FAEEDA;
+  --purple:#534AB7;--purple-l:#EEEDFE;
+  --red:#A32D2D;--red-l:#FCEBEB;
+  --teal:#0F6E56;--teal-l:#E1F5EE;
+  --pink:#993556;--pink-l:#FBEAF0;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;font-size:14px;overflow:hidden}
+
+/* ── Layout ── */
+#app{display:flex;flex-direction:column;height:100%;padding-top:var(--safe-top)}
+#header{flex-shrink:0;padding:6px 14px 5px;background:var(--surf);border-bottom:1px solid var(--border)}
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 14px 8px}
+#nav{flex-shrink:0;display:flex;background:var(--surf);border-top:1px solid var(--border);padding-bottom:var(--safe-bot)}
+
+/* ── Header ── */
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.hdr-title{font-size:16px;font-weight:700;letter-spacing:-0.3px}
+.hdr-time{font-family:'SF Mono',monospace;font-size:12px;color:var(--text2);text-align:right}
+.mode-row{display:flex;gap:5px;margin-top:5px}
+.mode-btn{flex:1;padding:5px 4px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s}
+.mode-btn.active{background:var(--blue-ll);border-color:var(--blue);color:var(--blue)}
+
+/* ── Nav ── */
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 4px;border:none;background:none;color:var(--text3);font-size:9px;font-weight:600;cursor:pointer;gap:3px;letter-spacing:0.3px;text-transform:uppercase}
+.nav-btn svg{width:18px;height:18px}
+.nav-btn.active{color:var(--blue)}
+
+/* ── Cards ── */
+.card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)}
+.card-hdr-left{display:flex;align-items:center;gap:8px}
+.card-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.card-title{font-size:13px;font-weight:600}
+.card-time{font-size:11px;color:var(--text2);font-family:'SF Mono',monospace}
+
+/* ── Task rows ── */
+.task{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.task:last-child{border-bottom:none}
+.task-check{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--border2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.task-check.done{background:var(--green);border-color:var(--green)}
+.task-check.done svg{display:block}
+.task-check svg{display:none;width:12px;height:12px}
+.task-body{flex:1;min-width:0}
+.task-label{font-size:13px;font-weight:500;line-height:1.3}
+.task-label.done{opacity:.4;text-decoration:line-through}
+.task-sub{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.4}
+.task-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0;white-space:nowrap}
+
+/* ── Progress bar ── */
+.progress-wrap{padding:10px 14px 12px;background:var(--surf2)}
+.progress-row{display:flex;justify-content:space-between;margin-bottom:6px}
+.progress-label{font-size:11px;color:var(--text2)}
+.progress-val{font-size:11px;font-weight:600;color:var(--green)}
+.progress-bar{height:4px;background:var(--border2);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s}
+
+/* ── Workout ── */
+.ex-group{margin-bottom:6px}
+.ex-group-hdr{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:8px 14px 4px}
+.ex-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border)}
+.ex-row:last-child{border-bottom:none}
+.ex-name{flex:1;font-size:13px;font-weight:500}
+.ex-sets{font-size:12px;color:var(--blue);font-weight:600;font-family:'SF Mono',monospace;white-space:nowrap}
+.ex-log{display:flex;gap:6px;align-items:center}
+.ex-input{width:52px;padding:4px 6px;border-radius:4px;border:1px solid var(--border2);background:var(--surf2);color:var(--text);font-size:12px;text-align:center;font-family:'SF Mono',monospace}
+.ex-x{font-size:11px;color:var(--text3)}
+.ex-cue{font-size:10px;color:var(--text3);padding:2px 14px 6px;line-height:1.4}
+
+/* ── Layover ── */
+.tz-bar{display:flex;gap:1px;margin-bottom:8px}
+.tz-block{flex:1;background:var(--surf2);border-radius:var(--radius-sm);padding:10px 12px}
+.tz-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px}
+.tz-time{font-family:'SF Mono',monospace;font-size:18px;font-weight:700}
+.tz-body{font-size:10px;color:var(--text2);margin-top:2px}
+.tz-bar .tz-block:first-child{border-top-right-radius:0;border-bottom-right-radius:0}
+.tz-bar .tz-block:last-child{border-top-left-radius:0;border-bottom-left-radius:0}
+
+.timeline-item{display:flex;gap:12px;padding:8px 0;position:relative}
+.tl-time{width:80px;flex-shrink:0;text-align:right}
+.tl-local{font-size:13px;font-weight:600;font-family:'SF Mono',monospace}
+.tl-pdt{font-size:10px;color:var(--text3);font-family:'SF Mono',monospace}
+.tl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;margin-top:3px}
+.tl-body{flex:1}
+.tl-title{font-size:13px;font-weight:600;line-height:1.3}
+.tl-sub{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.4}
+.tl-line{width:1px;background:var(--border2);position:absolute;left:92px;top:22px;bottom:-8px}
+.timeline-item:last-child .tl-line{display:none}
+.alert-row{display:flex;align-items:center;gap:8px;padding:6px 0}
+.alert-time-input{padding:4px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--surf2);color:var(--text);font-size:12px;font-family:'SF Mono',monospace;width:90px}
+.alert-label{font-size:12px;color:var(--text2);flex:1}
+.alert-toggle{width:36px;height:20px;border-radius:10px;border:none;cursor:pointer;position:relative;flex-shrink:0;transition:background .15s}
+.alert-toggle.on{background:var(--blue)}
+.alert-toggle.off{background:var(--border2)}
+.alert-toggle::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;transition:left .15s}
+.alert-toggle.on::after{left:18px}
+.alert-toggle.off::after{left:2px}
+
+/* ── Bloodwork ── */
+.bw-row{display:flex;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border)}
+.bw-row:last-child{border-bottom:none}
+.bw-name{flex:1;font-size:13px;font-weight:500}
+.bw-range{font-size:11px;color:var(--text3);margin-right:8px}
+.bw-val{font-family:'SF Mono',monospace;font-size:13px;font-weight:600;width:70px;text-align:right}
+.bw-status{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-left:6px}
+.bw-input{width:70px;padding:3px 6px;border-radius:4px;border:1px solid var(--border2);background:var(--surf2);color:var(--text);font-size:12px;font-family:'SF Mono',monospace;text-align:right}
+
+/* ── Section label ── */
+.section-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin:14px 0 6px}
+
+/* ── Macro bar ── */
+.macro-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.macro-cell{background:var(--surf2);border-radius:var(--radius-sm);padding:8px 10px;text-align:center}
+.macro-val{font-size:16px;font-weight:700;font-family:'SF Mono',monospace}
+.macro-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+
+/* ── Notification banner ── */
+#notif-banner{background:var(--blue-ll);border:1px solid var(--blue);border-radius:var(--radius);padding:10px 14px;margin-bottom:8px;display:none}
+#notif-banner.show{display:block}
+.notif-title{font-size:13px;font-weight:600;color:var(--blue);margin-bottom:2px}
+.notif-sub{font-size:11px;color:var(--text2)}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+
+/* ── Utilities ── */
+.flex-row{display:flex;align-items:center;gap:8px}
+.spacer{flex:1}
+.pill{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+.mt8{margin-top:8px}
+
+</style>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('Protocol app updated');
+          }
+        });
+      });
+    })
+    .catch(err => console.log('SW registration failed:', err));
+}
+</script>
+</head>
+<body>
+<div id="app">
+<div id="offline-bar" style="display:none;background:var(--amber-l);border-bottom:1px solid var(--amber);padding:6px 16px;font-size:11px;color:var(--amber);font-weight:600;text-align:center">
+  OFFLINE MODE — all data saved locally
+</div>
+<div id="header">
+  <div class="hdr-top">
+    <div>
+      <div class="hdr-title">Protocol</div>
+      <div id="date-display" style="font-size:11px;color:var(--text2);margin-top:1px"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="theme-toggle" onclick="toggleTheme()" style="background:var(--surf2);border:1px solid var(--border2);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap">Light</button>
+      <div class="hdr-time">
+        <div id="clock-local" style="font-size:16px;font-weight:700;font-family:'SF Mono',monospace"></div>
+        <div id="sun-times" style="font-size:10px;color:var(--text3);text-align:right"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mode-row">
+    <div class="mode-btn active" onclick="setMode('home')" id="btn-home">At Home</div>
+    <div class="mode-btn" onclick="setMode('duty')" id="btn-duty">Duty Day</div>
+    <div class="mode-btn" onclick="setMode('layover')" id="btn-layover">Layover</div>
+  </div>
+</div>
+
+<div id="content"></div>
+
+<div id="nav">
+  <button class="nav-btn active" id="nav-today" onclick="setTab('today')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Today
+  </button>
+  <button class="nav-btn" id="nav-workout" onclick="setTab('workout')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v16M18 4v16M6 12h12M2 8h4M18 8h4M2 16h4M18 16h4"/></svg>
+    Workout
+  </button>
+</div>
+</div>
+<script>
+
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+let mode = 'home';
+let tab = 'today';
+let state = {};
+
+function loadState() {
+  try { state = JSON.parse(localStorage.getItem('protocol_state') || '{}'); } catch(e) { state = {}; }
+  if (!state.checks) state.checks = {};
+  if (!state.weights) state.weights = {};
+  if (!state.alerts) state.alerts = {};
+  if (!state.layover) state.layover = { tz: 'Europe/London', tzName: 'London BST' };
+  if (!state.flight) state.flight = {};
+  if (state.theme === 'light') applyTheme('light');
+}
+
+function toggleTheme() {
+  const next = document.body.classList.contains('light') ? 'dark' : 'light';
+  applyTheme(next);
+  state.theme = next;
+  saveState();
+}
+
+function applyTheme(t) {
+  const btn = document.getElementById('theme-toggle');
+  if (t === 'light') {
+    document.body.classList.add('light');
+    if (btn) btn.textContent = 'Dark';
+  } else {
+    document.body.classList.remove('light');
+    if (btn) btn.textContent = 'Light';
+  }
+}
+function saveState() { localStorage.setItem('protocol_state', JSON.stringify(state)); }
+
+function setMode(m) {
+  mode = m;
+  ['home','layover','duty'].forEach(x => {
+    document.getElementById('btn-'+x).classList.toggle('active', x === m);
+  });
+  render();
+}
+
+function setTab(t) {
+  tab = t;
+  ['today', 'workout'].forEach(x => {
+    const el = document.getElementById('nav-'+x); if(el) el.classList.toggle('active', x===t);
+  });
+  render();
+}
+
+// ── Clock ──────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const day = DAYS[now.getDay()];
+  const mon = MONTHS[now.getMonth()];
+  document.getElementById('date-display').textContent = `${day}, ${mon} ${now.getDate()}`;
+  const localH = String(now.getHours()).padStart(2,'0');
+  const localM = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('clock-local').textContent = `${localH}:${localM}`;
+}
+
+// ── Sunrise / Sunset ───────────────────────────────────────────────────────
+function calcSunTimes(lat, lng, date) {
+  // Accurate sunrise/sunset using NOAA algorithm
+  const rad = Math.PI / 180;
+  const deg = 180 / Math.PI;
+  const JD = date.getTime() / 86400000 + 2440587.5;
+  const n  = JD - 2451545.0;
+  const L  = (280.46 + 0.9856474 * n) % 360;
+  const g  = (357.528 + 0.9856003 * n) % 360;
+  const lam = L + 1.915 * Math.sin(g * rad) + 0.020 * Math.sin(2 * g * rad);
+  const sinDec = Math.sin(23.439 * rad) * Math.sin(lam * rad);
+  const cosDec = Math.cos(Math.asin(sinDec));
+  const cosH   = (Math.cos(90.833 * rad) - sinDec * Math.sin(lat * rad)) / (cosDec * Math.cos(lat * rad));
+  if (cosH < -1 || cosH > 1) return null; // polar day/night
+  const H = Math.acos(cosH) * deg;
+  const RA = Math.atan2(Math.cos(23.439 * rad) * Math.sin(lam * rad), Math.cos(lam * rad)) * deg / 15;
+  const noon = 12 + (- lng / 15) - (RA - (L / 15));
+  const rise = noon - H / 15;
+  const set  = noon + H / 15;
+  const fmt  = h => {
+    let hh = ((h % 24) + 24) % 24;
+    const mm = Math.round((hh % 1) * 60);
+    hh = Math.floor(hh);
+    return String(hh).padStart(2,'0') + ':' + String(mm % 60).padStart(2,'0');
+  };
+  return { rise: fmt(rise), set: fmt(set) };
+}
+
+function updateSunTimes(lat, lng) {
+  const times = calcSunTimes(lat, lng, new Date());
+  const el = document.getElementById('sun-times');
+  if (el && times) {
+    el.innerHTML = '&#9728; ' + times.rise + ' &nbsp; &#9790; ' + times.set;
+  }
+}
+
+function initSunTimes() {
+  const el = document.getElementById('sun-times');
+  if (!el) return;
+  if (!navigator.geolocation) {
+    el.textContent = 'location unavailable';
+    return;
+  }
+  // Try cached coords first for instant display
+  const cached = localStorage.getItem('sun_coords');
+  if (cached) {
+    try {
+      const {lat, lng} = JSON.parse(cached);
+      updateSunTimes(lat, lng);
+    } catch(e) {}
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      localStorage.setItem('sun_coords', JSON.stringify({lat, lng}));
+      updateSunTimes(lat, lng);
+    },
+    err => {
+      if (!cached) { if(el) el.textContent = 'allow location'; }
+    },
+    { enableHighAccuracy: false, timeout: 8000, maximumAge: 3600000 }
+  );
+}
+
+// ── Protocol data ──────────────────────────────────────────────────────────
+const DAILY_TASKS = {
+  Monday: [
+    { time:'On waking', id:'mon_nmn', label:'NMN 1g sublingual', sub:'hold under tongue 2–3 min', color:'#f59e0b', badge:'daily' },
+    { time:'Morning', id:'mon_ss31', label:'SS-31 1mg subQ', sub:'any time · no fasting · 6-week cycle', color:'#a855f7', badge:'6-wk cycle' },
+    { time:'Morning', id:'mon_bpc_am', label:'BPC-157 250–500mcg subQ', sub:'local to elbow/forearm · 500mcg if active', color:'#10b981', badge:'KLOW day' },
+    { time:'On waking', id:'mon_redlight', label:'Red light vision 3 min', sub:'670nm · eyes open · not direct · before cold', color:'#ec4899', badge:'' },
+    { time:'Morning', id:'mon_cold', label:'Cold plunge / shower 2–3 min', sub:'morning only · norepinephrine · HRV', color:'#3b82f6', badge:'' },
+    { time:'Morning', id:'mon_coffee', label:'Mushroom coffee + Creatine 5g + MCT oil', sub:'lion’s mane / chaga blend · creatine dissolved in · MCT oil added · cognitive + training primer', color:'#92400e', badge:'' },
+    { time:'On waking', id:'mon_ostarine', label:'Ostarine 10mg (1ml)', sub:'take with food · lipophilic · Cycle 1 Wk 1/8', color:'#4f46e5', badge:'cycle 1' },
+    { time:'On waking', id:'mon_supps_ow', label:'Boron 6mg · Cissus 1600mg · Fadogia 600mg · Tongkat Ali 400mg', sub:'take with food or water · joint health + testosterone support', color:'#14b8a6', badge:'' },
+    { time:'Breakfast', id:'mon_bfast', label:'Breakfast · 50–60g protein + supps', sub:'Fish oil 2g · Turmeric 750mg · HMB 1g · TMG 1.25g', color:'#14b8a6', badge:'' },
+    { time:'Pre-training', id:'mon_collagen', label:'Collagen 15g + Vit C 500mg + HMB 1g', sub:'hydrolyzed collagen · HMB pre-training dose · 60 min before training', color:'#ec4899', badge:'60 min' },
+    { time:'Pre-training', id:'mon_klow', label:'KLOW blend subQ', sub:'GHK-Cu 2.5mg · KPV 500mcg · BPC-157 500mcg · TB-500 500mcg · 10 units U-100', color:'#3b82f6', badge:'KLOW' },
+    { time:'Pre-training', id:'mon_motsc', label:'MOTS-c 2.5mg subQ', sub:'Mon/Wed/Fri only · pre-training preferred · 6-week cycle', color:'#f59e0b', badge:'6-wk cycle' },
+    { time:'Post-train', id:'mon_whey', label:'Whey isolate 40–50g', sub:'immediately post-training · highest MPS priority', color:'#6366f1', badge:'' },
+    { time:'Mid-Evening', id:'mon_mideve', label:'Casein 30–40g + evening supps', sub:'Creatine 5g · Fish oil 2g · Cissus 1600mg · Vit C 500mg · HMB 1g · TMG 1.25g', color:'#14b8a6', badge:'2–3hr pre-bed' },
+    { time:'Bed', id:'mon_redlight_eve', label:'Red light therapy 10–20 min', sub:'660/850nm · elbow application too', color:'#ec4899', badge:'60–90 min prior' },
+    { time:'Bed', id:'mon_sauna', label:'Sauna', sub:'end 90–120 min before bed · 20 min · IR or traditional', color:'#7c3aed', badge:'' },
+    { time:'Bed', id:'mon_bed', label:'Sleep stack', sub:'Mag glycinate 400mg · Glycine 3g · L-Theanine 200mg · Apigenin 50mg · Turmeric 750mg', color:'#7c3aed', badge:'30 min prior' },
+  ],
+  Tuesday: [
+    { time:'On waking', id:'tue_nmn', label:'NMN 1g sublingual', sub:'hold under tongue 2–3 min', color:'#f59e0b', badge:'daily' },
+    { time:'Morning', id:'tue_ss31', label:'SS-31 1mg subQ', sub:'any time · no fasting · 6-week cycle', color:'#a855f7', badge:'6-wk cycle' },
+    { time:'Morning', id:'tue_bpc1', label:'BPC-157 250–500mcg subQ', sub:'injection 1 of 2', color:'#10b981', badge:'' },
+    { time:'On waking', id:'tue_retrat', label:'Retatrutide 4mg subQ', sub:'weekly dose · every Tuesday · GLP-1/GIP/glucagon', color:'#ef4444', badge:'weekly' },
+    { time:'On waking', id:'tue_redlight', label:'Red light vision 3 min', sub:'670nm · eyes open · before cold plunge', color:'#ec4899', badge:'' },
+    { time:'Morning', id:'tue_cold', label:'Cold plunge / shower 2–3 min', sub:'morning only · circadian anchor', color:'#3b82f6', badge:'' },
+    { time:'Morning', id:'tue_cardio', label:'Light mobility / walk or swim 30 min', sub:'low intensity · active recovery · get outside', color:'#f59e0b', badge:'Zone 2' },
+    { time:'Morning', id:'tue_coffee', label:'Mushroom coffee + Creatine 5g + MCT oil', sub:'lion’s mane / chaga blend · creatine dissolved in · MCT oil added · cognitive + training primer', color:'#92400e', badge:'' },
+    { time:'On waking', id:'tue_ostarine', label:'Ostarine 10mg (1ml)', sub:'take with food · lipophilic · Cycle 1 Wk 1/8', color:'#4f46e5', badge:'cycle 1' },
+    { time:'On waking', id:'tue_supps_ow', label:'Boron 6mg · Cissus 1600mg · Fadogia 600mg · Tongkat Ali 400mg · NAC 600mg', sub:'take with food or water · joint health + testosterone support', color:'#14b8a6', badge:'' },
+    { time:'Breakfast', id:'tue_bfast', label:'Breakfast · 50–60g protein + supps', sub:'Fish oil 2g · Turmeric 750mg · HMB 1g · TMG 1.25g · NAC 600mg', color:'#14b8a6', badge:'' },
+    { time:'PM', id:'tue_bpc2', label:'BPC-157 250–500mcg subQ', sub:'injection 2 of 2', color:'#10b981', badge:'' },
+    { time:'Mid-Evening', id:'tue_mideve', label:'Casein 30–40g + evening supps', sub:'Creatine 5g · Fish oil 2g · Cissus 1600mg · Vit C 500mg · HMB 1g · TMG 1.25g · NAC 600mg', color:'#14b8a6', badge:'2–3hr pre-bed' },
+    { time:'Bed', id:'tue_redlight_eve', label:'Red light therapy 10–20 min', sub:'660/850nm · elbow application too', color:'#ec4899', badge:'60–90 min prior' },
+    { time:'Bed', id:'tue_bed', label:'Sleep stack', sub:'Mag glycinate 400mg · Glycine 3g · L-Theanine 200mg · Apigenin 50mg · Turmeric 750mg', color:'#7c3aed', badge:'30 min prior' },
+  ],
+  Wednesday: [
+    { time:'On waking', id:'wed_nmn', label:'NMN 1g sublingual', sub:'hold under tongue 2–3 min', color:'#f59e0b', badge:'daily' },
+    { time:'Morning', id:'wed_ss31', label:'SS-31 1mg subQ', sub:'any time · no fasting · 6-week cycle', color:'#a855f7', badge:'6-wk cycle' },
+    { time:'Morning', id:'wed_bpc_am', label:'BPC-157 250–500mcg subQ', sub:'local to elbow/forearm · KLOW day', color:'#10b981', badge:'KLOW day' },
+    { time:'On waking', id:'wed_redlight', label:'Red light vision 3 min', sub:'670nm · eyes open · before cold', color:'#ec4899', badge:'' },
+    { time:'Morning', id:'wed_cold', label:'Cold plunge / shower 2–3 min', sub:'morning only', color:'#3b82f6', badge:'' },
+    { time:'Morning', id:'wed_coffee', label:'Mushroom coffee + Creatine 5g + MCT oil', sub:'lion’s mane / chaga blend · creatine dissolved in · MCT oil added · cognitive + training primer', color:'#92400e', badge:'' },
+    { time:'On waking', id:'wed_ostarine', label:'Ostarine 10mg (1ml)', sub:'take with food · lipophilic · Cycle 1 Wk 1/8', color:'#4f46e5', badge:'cycle 1' },
+    { time:'On waking', id:'wed_supps_ow', label:'Boron 6mg · Cissus 1600mg · Fadogia 600mg · Tongkat Ali 400mg', sub:'take with food or water · joint health + testosterone support', color:'#14b8a6', badge:'' },
+    { time:'Breakfast', id:'wed_bfast', label:'Breakfast · 50–60g protein + supps', sub:'Fish oil 2g · Turmeric 750mg · HMB 1g · TMG 1.25g', color:'#14b8a6', badge:'' },
+    { time:'Pre-training', id:'wed_collagen', label:'Collagen 15g + Vit C 500mg + HMB 1g · KLOW blend · MOTS-c 2.5mg', sub:'collagen hydrolyzed · HMB pre-training dose · KLOW 10 units · MOTS-c pre-training', color:'#3b82f6', badge:'60 min' },
+    { time:'Post-train', id:'wed_whey', label:'Whey isolate 40–50g', sub:'immediately post-training', color:'#6366f1', badge:'' },
+    { time:'Mid-Evening', id:'wed_mideve', label:'Casein 30–40g + evening supps', sub:'Creatine 5g · Fish oil 2g · Cissus 1600mg · Vit C 500mg · HMB 1g · TMG 1.25g', color:'#14b8a6', badge:'2–3hr pre-bed' },
+    { time:'Bed', id:'wed_redlight_eve', label:'Red light 10–20 min + Sauna', sub:'660/850nm · sauna ends first · red light after', color:'#ec4899', badge:'60–90 min prior' },
+    { time:'Bed', id:'wed_bed', label:'Sleep stack', sub:'Mag glycinate 400mg · Glycine 3g · L-Theanine 200mg · Apigenin 50mg · Turmeric 750mg', color:'#7c3aed', badge:'30 min prior' },
+  ],
+  Thursday: [
+    { time:'On waking', id:'thu_nmn', label:'NMN 1g sublingual', sub:'hold under tongue 2–3 min', color:'#f59e0b', badge:'daily' },
+    { time:'Morning', id:'thu_ss31', label:'SS-31 1mg subQ', sub:'any time · no fasting · 6-week cycle', color:'#a855f7', badge:'6-wk cycle' },
+    { time:'Morning', id:'thu_bpc1', label:'BPC-157 250–500mcg subQ', sub:'injection 1 of 2', color:'#10b981', badge:'' },
+    { time:'On waking', id:'thu_redlight', label:'Red light vision 3 min', sub:'670nm · eyes open · before cold', color:'#ec4899', badge:'' },
+    { time:'Morning', id:'thu_cold', label:'Cold plunge / shower 2–3 min', sub:'morning only', color:'#3b82f6', badge:'' },
+    { time:'Morning', id:'thu_cardio', label:'Low-impact cardio 30–40 min', sub:'Zone 2 · conversational pace · get outside', color:'#f59e0b', badge:'Zone 2' },
+    { time:'Morning', id:'thu_coffee', label:'Mushroom coffee + Creatine 5g + MCT oil', sub:'lion’s mane / chaga blend · creatine dissolved in · MCT oil added · cognitive + training primer', color:'#92400e', badge:'' },
+    { time:'On waking', id:'thu_ostarine', label:'Ostarine 10mg (1ml)', sub:'take with food · lipophilic · Cycle 1 Wk 1/8', color:'#4f46e5', badge:'cycle 1' },
+    { time:'On waking', id:'thu_supps_ow', label:'Boron 6mg · Cissus 1600mg · Fadogia 600mg · Tongkat Ali 400mg · NAC 600mg', sub:'take with food or water · joint health + testosterone support', color:'#14b8a6', badge:'' },
+    { time:'Breakfast', id:'thu_bfast', label:'Breakfast · 50–60g protein + supps', sub:'Fish oil 2g · Turmeric 750mg · HMB 1g · TMG 1.25g · NAC 600mg', color:'#14b8a6', badge:'' },
+    { time:'PM', id:'thu_bpc2', label:'BPC-157 250–500mcg subQ', sub:'injection 2 of 2', color:'#10b981', badge:'' },
+    { time:'Mid-Evening', id:'thu_mideve', label:'Casein 30–40g + evening supps', sub:'Creatine 5g · Fish oil 2g · Cissus 1600mg · Vit C 500mg · HMB 1g · TMG 1.25g · NAC 600mg', color:'#14b8a6', badge:'2–3hr pre-bed' },
+    { time:'Bed', id:'thu_redlight_eve', label:'Red light therapy 10–20 min', sub:'660/850nm · elbow application too', color:'#ec4899', badge:'60–90 min prior' },
+    { time:'Bed', id:'thu_bed', label:'Sleep stack', sub:'Mag glycinate 400mg · Glycine 3g · L-Theanine 200mg · Apigenin 50mg · Turmeric 750mg', color:'#7c3aed', badge:'30 min prior' },
+  ],
+  Friday: [
+    { time:'On waking', id:'fri_nmn', label:'NMN 1g sublingual', sub:'hold under tongue 2–3 min', color:'#f59e0b', badge:'daily' },
+    { time:'Morning', id:'fri_ss31', label:'SS-31 1mg subQ', sub:'any time · no fasting · 6-week cycle', color:'#a855f7', badge:'6-wk cycle' },
+    { time:'Morning', id:'fri_bpc_am', label:'BPC-157 250–500mcg subQ', sub:'local to elbow/forearm · KLOW day', color:'#10b981', badge:'KLOW day' },
+    { time:'On waking', id:'fri_redlight', label:'Red light vision 3 min', sub:'670nm · eyes open · before cold', color:'#ec4899', badge:'' },
+    { time:'Morning', id:'fri_cold', label:'Cold plunge / shower 2–3 min', sub:'morning only', color:'#3b82f6', badge:'' },
+    { time:'Morning', id:'fri_coffee', label:'Mushroom coffee + Creatine 5g + MCT oil', sub:'lion’s mane / chaga blend · creatine dissolved in · MCT oil added · cognitive + training primer', color:'#92400e', badge:'' },
+    { time:'On waking', id:'fri_ostarine', label:'Ostarine 10mg (1ml)', sub:'take with food · lipophilic · Cycle 1 Wk 1/8', color:'#4f46e5', badge:'cycle 1' },
+    { time:'On waking', id:'fri_supps_ow', label:'Boron 6mg · Cissus 1600mg · Fadogia 600mg · Tongkat Ali 400mg', sub:'take with food or water · joint health + testosterone support', color:'#14b8a6', badge:'' },
+    { time:'Breakfast', id:'fri_bfast', label:'Breakfast · 50–60g protein + supps', sub:'Fish oil 2g · Turmeric 750mg · HMB 1g · TMG 1.25g', color:'#14b8a6', badge:'' },
+    { time:'Pre-training', id:'fri_collagen', label:'Collagen 15g + Vit C 500mg + HMB 1g · KLOW blend · MOTS-c 2.5mg', sub:'collagen hydrolyzed · HMB pre-training dose · KLOW 10 units · MOTS-c pre-training', color:'#3b82f6', badge:'60 min' },
+    { time:'Post-train', id:'fri_whey', label:'Whey isolate 40–50g', sub:'immediately post-training', color:'#6366f1', badge:'' },
+    { time:'Mid-Evening', id:'fri_mideve', label:'Casein 30–40g + evening supps', sub:'Creatine 5g · Fish oil 2g · Cissus 1600mg · Vit C 500mg · HMB 1g · TMG 1.25g', color:'#14b8a6', badge:'2–3hr pre-bed' },
+    { time:'Bed', id:'fri_redlight_eve', label:'Red light 10–20 min + Sauna', sub:'660/850nm · sauna ends first · red light after', color:'#ec4899', badge:'60–90 min prior' },
+    { time:'Bed', id:'fri_bed', label:'Sleep stack', sub:'Mag glycinate 400mg · Glycine 3g · L-Theanine 200mg · Apigenin 50mg · Turmeric 750mg', color:'#7c3aed', badge:'30 min prior' },
+  ],
+  Saturday: [
+    { time:'On waking', id:'sat_nmn', label:'NMN 1g sublingual', sub:'hold under tongue 2–3 min', color:'#f59e0b', badge:'daily' },
+    { time:'Morning', id:'sat_ss31', label:'SS-31 1mg subQ', sub:'any time · no fasting · 6-week cycle', color:'#a855f7', badge:'6-wk cycle' },
+    { time:'Morning', id:'sat_bpc1', label:'BPC-157 250–500mcg subQ', sub:'injection 1 of 2', color:'#10b981', badge:'' },
+    { time:'On waking', id:'sat_redlight', label:'Red light vision 3 min', sub:'670nm · eyes open · before cold', color:'#ec4899', badge:'' },
+    { time:'Morning', id:'sat_cold', label:'Cold plunge / shower 2–3 min', sub:'morning only', color:'#3b82f6', badge:'' },
+    { time:'Pre-training', id:'sat_collagen', label:'Collagen 15g + Vit C 500mg + HMB 1g', sub:'hydrolyzed collagen · HMB pre-training dose · 60 min before training', color:'#ec4899', badge:'60 min' },
+    { time:'Morning', id:'sat_coffee', label:'Mushroom coffee + Creatine 5g + MCT oil', sub:'lion’s mane / chaga blend · creatine dissolved in · MCT oil added · cognitive + training primer', color:'#92400e', badge:'' },
+    { time:'On waking', id:'sat_ostarine', label:'Ostarine 10mg (1ml)', sub:'take with food · lipophilic · Cycle 1 Wk 1/8', color:'#4f46e5', badge:'cycle 1' },
+    { time:'On waking', id:'sat_supps_ow', label:'Boron 6mg · Cissus 1600mg · Fadogia 600mg · Tongkat Ali 400mg', sub:'take with food or water · joint health + testosterone support', color:'#14b8a6', badge:'' },
+    { time:'Breakfast', id:'sat_bfast', label:'Breakfast · 50–60g protein + supps', sub:'Fish oil 2g · Turmeric 750mg · HMB 1g · TMG 1.25g', color:'#14b8a6', badge:'' },
+    { time:'Post-train', id:'sat_whey', label:'Whey isolate 40–50g', sub:'immediately post-training', color:'#6366f1', badge:'' },
+    { time:'PM', id:'sat_bpc2', label:'BPC-157 250–500mcg subQ', sub:'injection 2 of 2', color:'#10b981', badge:'' },
+    { time:'Mid-Evening', id:'sat_mideve', label:'Casein 30–40g + evening supps', sub:'Creatine 5g · Fish oil 2g · Cissus 1600mg · Vit C 500mg · HMB 1g · TMG 1.25g', color:'#14b8a6', badge:'2–3hr pre-bed' },
+    { time:'Bed', id:'sat_redlight_eve', label:'Red light 10–20 min + Sauna', sub:'660/850nm · sauna ends first · red light after', color:'#ec4899', badge:'60–90 min prior' },
+    { time:'Bed', id:'sat_bed', label:'Sleep stack', sub:'Mag glycinate 400mg · Glycine 3g · L-Theanine 200mg · Apigenin 50mg · Turmeric 750mg', color:'#7c3aed', badge:'30 min prior' },
+  ],
+  Sunday: [
+    { time:'On waking', id:'sun_nmn', label:'NMN 1g sublingual', sub:'hold under tongue 2–3 min', color:'#f59e0b', badge:'daily' },
+    { time:'Morning', id:'sun_ss31', label:'SS-31 1mg subQ', sub:'any time · no fasting · 6-week cycle', color:'#a855f7', badge:'6-wk cycle' },
+    { time:'Morning', id:'sun_bpc1', label:'BPC-157 250–500mcg subQ', sub:'injection 1 of 2', color:'#10b981', badge:'' },
+    { time:'On waking', id:'sun_redlight', label:'Red light vision 3 min', sub:'670nm · eyes open · before cold', color:'#ec4899', badge:'' },
+    { time:'Morning', id:'sun_cold', label:'Cold plunge / shower 2–3 min', sub:'morning only', color:'#3b82f6', badge:'' },
+    { time:'Morning', id:'sun_walk', label:'Walk optional', sub:'no structured training · full rest day', color:'#888780', badge:'' },
+    { time:'Morning', id:'sun_coffee', label:'Mushroom coffee + Creatine 5g + MCT oil', sub:'lion’s mane / chaga blend · creatine dissolved in · MCT oil added · cognitive + training primer', color:'#92400e', badge:'' },
+    { time:'On waking', id:'sun_ostarine', label:'Ostarine 10mg (1ml)', sub:'take with food · lipophilic · Cycle 1 Wk 1/8', color:'#4f46e5', badge:'cycle 1' },
+    { time:'On waking', id:'sun_supps_ow', label:'Boron 6mg · Cissus 1600mg · Fadogia 600mg · Tongkat Ali 400mg · NAC 600mg', sub:'take with food or water · joint health + testosterone support', color:'#14b8a6', badge:'' },
+    { time:'Breakfast', id:'sun_bfast', label:'Breakfast · 50–60g protein + supps', sub:'Fish oil 2g · Turmeric 750mg · HMB 1g · TMG 1.25g · NAC 600mg', color:'#14b8a6', badge:'' },
+    { time:'PM', id:'sun_bpc2', label:'BPC-157 250–500mcg subQ', sub:'injection 2 of 2', color:'#10b981', badge:'' },
+    { time:'Mid-Evening', id:'sun_mideve', label:'Casein 30–40g + evening supps', sub:'Creatine 5g · Fish oil 2g · Cissus 1600mg · Vit C 500mg · HMB 1g · TMG 1.25g · NAC 600mg', color:'#14b8a6', badge:'2–3hr pre-bed' },
+    { time:'Bed', id:'sun_redlight_eve', label:'Red light therapy 10–20 min', sub:'660/850nm · elbow application too', color:'#ec4899', badge:'60–90 min prior' },
+    { time:'Bed', id:'sun_bed', label:'Sleep stack', sub:'Mag glycinate 400mg · Glycine 3g · L-Theanine 200mg · Apigenin 50mg · Turmeric 750mg', color:'#7c3aed', badge:'30 min prior' },
+  ]
+};
+
+const WORKOUTS = {
+  Monday: {
+    tag:'Lower · Push · Shoulder Caps', color:'#3b82f6',
+    groups:[
+      { name:'Compound', exercises:[
+        { id:'mon_squat', name:'Squat', sets:'4 × 6–8', cue:'bar path stays vertical over mid-foot · knees track toes throughout · brace 360° before descent · break at hips and knees simultaneously · depth to parallel or below · drive through entire foot on ascent · do not let knees cave on the way up' },
+        { id:'mon_facepu', name:'Face Pulls', sets:'4 × 15–20', cue:'always before pressing · rope attachment · cable at face height · pull toward nose with elbows flaring wide · externally rotate hard at the end — hands end up beside ears, thumbs pointing back · squeezes rear delt and mid trap · primes rotator cuff for pressing load · slow controlled tempo' },
+        { id:'mon_press', name:'Barbell / DB Press', sets:'4 × 8–10', cue:'arch slightly, chest tall, scapula retracted and depressed · elbows at 45° to torso — not flared to 90° · lower to upper chest with a pause · drive bar in a very slight arc back over the face at lockout · brace hard throughout · DBs: allow slight rotation toward neutral at bottom' },
+        { id:'mon_stepup', name:'Weighted Step Ups', sets:'3 × 10/side', cue:'step height so thigh reaches parallel · drive through the heel of the working leg — not the toe of the trailing leg · achieve full hip extension at the top before stepping down · control the descent slowly · do not bounce off the floor · keep torso upright · add load to the contralateral side for balance challenge' },
+      ]},
+      { name:'Shoulder Caps', exercises:[
+        { id:'mon_cable_lat', name:'Cable Lateral Raise', sets:'4 × 15–20', cue:'stand sideways to low cable · slight forward lean from hips (~15°) · lead with the elbow not the hand · raise to just above parallel — above that shifts to upper trap · 3-sec lowering phase every rep · the stretch at the bottom under cable tension is where the growth stimulus concentrates · do not shrug' },
+        { id:'mon_behind', name:'Behind-Body Cable Raise', sets:'3 × 12', cue:'cable set at hip height behind you · reach across the body and upward in an arc · hits the lateral delt from a rear angle that standard raises cannot reach · pause at the top · keep the movement smooth not jerky · works well at slightly higher rep ranges' },
+        { id:'mon_drop', name:'Lateral Raise Drop Set', sets:'3 × 8/8/8', cue:'start with a weight you can complete 8 strict reps · drop immediately to a lighter weight for 8 more · drop again for 8 more · no rest between drops · the pump from the accumulated metabolic stress here is extreme · use cable for consistent tension or DBs for convenience · the lateral delt responds particularly well to this technique' },
+        { id:'mon_bfr_lat', name:'BFR Lateral Raises', sets:'30/15/15/15', cue:'cuff at upper arm · 7/10 tightness · venous occlusion only · 20–30% 1RM · 30-sec rest between sets with cuff on · burn is intense and expected — this is the mechanism · do not loosen cuff between sets' },
+      ]},
+      { name:'BFR Legs', exercises:[
+        { id:'mon_bfr_leg', name:'BFR Leg Extensions', sets:'30/15/15/15', cue:'cuff at upper thigh as proximal as possible · 7/10 tightness · 20–30% 1RM · full extension at top · controlled lowering · quad isolation with near-zero joint stress at this load · 30-sec rest cuff stays on · excellent post-squat metabolic finisher' },
+      ]},
+      { name:'Rehab + Core', exercises:[
+        { id:'mon_ecc_wrist', name:'Eccentric Wrist Flexor Curl', sets:'3 × 10', cue:'4-sec lowering only — no concentric pull · use the other hand to lift the weight back to start · work in a pain-free range · load should be light enough that you feel tension without provoking the lateral epicondyle · this is tendon remodeling work not strength work · consistency matters more than load · pain must stay under 4/10' },
+        { id:'mon_bfr_fore', name:'BFR Forearm Curls', sets:'30/15/15/15', cue:'cuff at upper arm · 20–30% 1RM · pronated or neutral grip · drives blood into the forearm extensors and flexors simultaneously · supports tendon remodeling environment created by the eccentric work · 30/15/15/15 scheme with 30-sec rest' },
+        { id:'mon_deadbug', name:'Dead Bug', sets:'3 × 8/side', cue:'lie flat · arms vertical toward ceiling · hips and knees at 90° · the entire lower back must stay pressed against the floor — this is the only cue that matters · slowly extend opposite arm and leg toward the floor · if the lower back lifts your abs have lost tension — reduce range · 3-sec extension · return slowly · do not hold breath' },
+      ]},
+    ]
+  },
+  Wednesday: {
+    tag:'Pull · Lats · Traps', color:'#10b981',
+    groups:[
+      { name:'Shoulder health primer', exercises:[
+        { id:'wed_facepu', name:'Face Pulls', sets:'4 × 15–20', cue:'open every pull session here — rear delt and external rotator activation before any horizontal pulling prevents shoulder impingement under rowing loads · rope attachment · cable at face height · elbows wide · pull to face and externally rotate hard at the end · hands finish by ears, thumbs pointing back · slow and controlled · this protects the shoulder capsule for the heavy rowing ahead' },
+      ]},
+      { name:'Vertical pull — lat width', exercises:[
+        { id:'wed_pulldown', name:'Lat Pulldown (wide grip)', sets:'4 × 10–12', cue:'the most important cue: initiate by depressing the scapula and pulling it back before the elbow bends — this ensures the lat does the work not the bicep · pull to upper chest not below chin · elbows drive down and slightly back · lean back 20–30° · full stretch at the top letting the shoulder blade elevate — this is where lat development happens · do not shorten the range' },
+        { id:'wed_single_pull', name:'Single-Arm Cable Pulldown', sets:'3 × 12', cue:'cable set high · pull down and across toward the opposite hip · this path creates maximum lat contraction through its full function · pause for 1 second at the top in the fully stretched position · allow the shoulder blade to rise and the lat to lengthen · this is a finisher not a heavy lift — squeeze the contraction hard every rep' },
+        { id:'wed_straight', name:'Straight-Arm Pulldown', sets:'3 × 15', cue:'arms completely straight throughout — no elbow bend · slight forward hinge · drive the bar from overhead to thighs in a wide arc · pause 1 full second at the top stretch — this is where the stimulus lives · pure lat isolation with zero bicep involvement · lighter than you think · the stretch under load is the point' },
+      ]},
+      { name:'Horizontal pull — thickness + traps', exercises:[
+        { id:'wed_row', name:'Seated Cable Row', sets:'4 × 10–12', cue:'full stretch forward at the start — let the scapula protract and the thoracic spine round slightly to load the rhomboids through range · drive the elbows back past the torso · squeeze hard at the end position · do not use momentum or lean back excessively · the return should be as controlled as the pull · straps mandatory' },
+        { id:'wed_meadows', name:'Meadows Row', sets:'3 × 10/side', cue:'straddle the landmine · stance perpendicular to the bar · grip the far end with one hand · pull with the elbow driving back and high — finishing above shoulder level · this elbow path specifically loads the lower lat insertion and creates thickness through the mid-back that standard rows cannot access · use straps · heavy is fine here' },
+        { id:'wed_neck', name:'Cable Row to Neck', sets:'3 × 12–15', cue:'cable at face height · elbows flare very wide — perpendicular to the torso or higher · pull toward the nose not the chin · this elbow path shifts the load entirely to mid trap and rear delt · different from standard rows which target lower trap · keep the neck neutral · control the return' },
+      ]},
+      { name:'Trap focus', exercises:[
+        { id:'wed_y', name:'Incline Y-Raise', sets:'3 × 15', cue:'lie face down on a 30–45° incline bench · arms hanging · raise them into a Y shape — approximately 45° above shoulder level · thumbs point up · this is lower trapezius isolation, one of the most underworked muscles in the upper body · use very light weight — the lower trap is usually extremely weak initially · squeeze at the top · lower with control · this exercise protects the shoulder over the long term' },
+      ]},
+      { name:'BFR finisher', exercises:[
+        { id:'wed_bfr_bi', name:'BFR Bicep Curls', sets:'30/15/15/15', cue:'cuff upper arm · 20–30% 1RM · the most researched BFR application in the literature · produces robust hypertrophy at loads that place near-zero stress on the lateral epicondyle · full ROM · supinate at the top · 30-sec rest with cuff on · the burn is the mechanism — metabolic stress and cell swelling drive the stimulus · do not loosen between sets' },
+        { id:'wed_bfr_lat', name:'BFR Lateral Raises', sets:'30/15/15/15', cue:'cuff upper arm · 20–30% 1RM · amplifies the deltoid metabolic stress after the heavy lat and trap work · lead with elbow · 30-sec rest cuff stays on · the lateral delt responds exceptionally well to BFR due to its high proportion of fast-twitch fibers recruited rapidly under occlusion' },
+      ]},
+      { name:'Rehab', exercises:[
+        { id:'wed_ecc_rev', name:'Eccentric Reverse Curl', sets:'3 × 12', cue:'4-sec lowering phase only · use the other hand to return the weight · pronated grip throughout — no supination which would load the extensor tendon · work in a pain-free range · this eccentrically loads the wrist extensors and brachioradialis · tendon remodeling requires consistency and patience — never push through sharp pain · under 3/10 throughout' },
+        { id:'wed_bfr_fore', name:'BFR Forearm', sets:'30/15/15/15', cue:'cuff upper arm · use straps on all pulling movements today — grip fatigue should not limit lat and trap development · BFR forearm work supports the tendon repair environment without adding mechanical load' },
+      ]},
+    ]
+  },
+  Friday: {
+    tag:'Hinge · Upper Back · OHP', color:'#a855f7',
+    groups:[
+      { name:'Compound', exercises:[
+        { id:'fri_dl', name:'Deadlift', sets:'4 × 5–6', cue:'hip hinge pattern — push the floor away rather than pull the bar up · neutral spine throughout — no rounding of the lower back at any point · bar stays in contact with the legs from floor to lockout · drive hips through at the top — do not hyperextend · brace hard before initiating the pull · straps are fine here — grip should not be the limiting factor · take your time between reps to reset position' },
+        { id:'fri_ohp', name:'Overhead Press', sets:'4 × 8–10', cue:'perform while fresh — second exercise for a reason · bar starts at upper chest · brace hard · press in a very slight arc — bar clears the face and tracks back over the ears at lockout · do not lean back excessively — a slight layback at lockout is acceptable but the movement should be predominantly vertical · full lockout every rep · if you hit a sticking point 2/3 of the way up it is a shoulder stability issue not a strength issue — face pulls are preventing this' },
+        { id:'fri_stepup', name:'Weighted Step Ups', sets:'3 × 10/side', cue:'drive through the heel of the working leg only · full hip extension at the top before stepping down · control the descent · do not bounce · add load progressively each session if pain-free · unilateral loading addresses asymmetries that squats and deadlifts can mask' },
+      ]},
+      { name:'Trap + rear delt', exercises:[
+        { id:'fri_highpull', name:'High Pull', sets:'3 × 12', cue:'barbell or cable · elbows drive up and OUT to shoulder height — not above · stopping at shoulder height avoids impingement that occurs when the elbow rises above the shoulder · think of it as a wide upright row with the elbows stopping horizontal · loads the full upper trap through its range · more athletic and functional than shrugs alone · controlled lowering' },
+        { id:'fri_neckrow', name:'Cable Row to Neck', sets:'3 × 12', cue:'elbows flare very wide — perpendicular or higher · pull toward the nose · this is mid and upper trap plus rear delt loaded together · different from the standard seated row · keep elbows high throughout · squeezes the mid-back in a way that contributes directly to the visual thickness of the upper back' },
+        { id:'fri_shrug', name:'DB Shrug', sets:'3 × 12', cue:'full range of motion — do not partial rep at the top · 2-second pause at full elevation · do not roll the shoulders — pure elevation only · rolling creates AC joint stress with no mechanical benefit · DBs allow the hands to sit at the sides which is more natural than a barbell in front · the pause is what makes this different from a momentum shrug' },
+      ]},
+      { name:'Shoulder finisher', exercises:[
+        { id:'fri_drop', name:'Lateral Raise Drop Set', sets:'3 × 8/8/8', cue:'three weights selected before starting · complete 8 reps at heaviest · immediately drop to middle weight for 8 more · drop to lightest for 8 more to failure · no rest between drops · the accumulated lactic acid and metabolic stress by the third drop is intense — this is the mechanism · the lateral delt responds better to metabolic stress than to heavy mechanical loading · the pump here should be significant' },
+        { id:'fri_behind', name:'Behind-Body Cable Raise', sets:'3 × 12', cue:'cable set at hip height behind you · reach across and upward · hits the lateral delt from a posterior angle that is inaccessible with standard raises · adds width by loading the mid and posterior portion of the cap · pause at the top · slow controlled return' },
+        { id:'fri_bfr_lat', name:'BFR Lateral Raises', sets:'30/15/15/15', cue:'cuff upper arm · 20–30% 1RM · performed after the drop set when the deltoid is already metabolically stressed · the BFR amplifies the stimulus further through cell swelling and fast-twitch recruitment · by this point the shoulder is fully warmed up which is the ideal time for BFR' },
+      ]},
+      { name:'BFR Legs', exercises:[
+        { id:'fri_bfr_curl', name:'BFR Leg Curls', sets:'30/15/15/15', cue:'cuff at upper thigh · 20–30% 1RM · hamstrings are already partially loaded from the deadlift and step ups · this partial pre-fatigue means the BFR metabolic response is amplified · posterior chain balance against the quad-dominant hinge day · controlled through full range · 30-sec rest cuff stays on' },
+      ]},
+      { name:'Rehab + Core', exercises:[
+        { id:'fri_ecc_elbow', name:'Eccentric Elbow Rehab', sets:'3 × 10', cue:'sub-maximal load only · 4-sec lowering · use the other hand to return the weight · pain must stay under 3/10 at all times · do not push through sharp pain · this is the final exercise so the elbow has had maximum warm-up time · tendon remodeling is a slow process — consistency across weeks matters far more than any single session load' },
+        { id:'fri_hollow', name:'Hollow Body Hold', sets:'3 × 30 sec', cue:'lie flat · press lower back into floor · raise legs to 30–45° and shoulders slightly off the floor · arms overhead · the lower back contact with the floor is the only cue that matters — the moment it lifts the lower abs have disengaged · start at 20 seconds and build to 45–60 · this isometric trains the lower abdominal fibers specifically' },
+      ]},
+    ]
+  },
+  Saturday: {
+    tag:'Elbow Reload · Lower Lat · Accessories', color:'#ef4444',
+    groups:[
+      { name:'Compound reload', exercises:[
+        { id:'sat_squat', name:'Squat (reload)', sets:'3 × 8–10', cue:'start at exactly 50% of your Monday working weight · this is technical refinement not a strength session · use the lighter load to perfect bar position, depth, and bracing · increase by 5–10% next Saturday only if Monday felt completely pain-free · patience here prevents setbacks' },
+        { id:'sat_stepup', name:'Weighted Step Ups', sets:'3 × 10/side', cue:'progressive loading applies here even on reload days · if last Saturday was pain-free add a small increment today · unilateral work is often more recoverable than bilateral so this can progress slightly faster than the squat · full hip extension at the top is non-negotiable' },
+        { id:'sat_facepu', name:'Face Pulls', sets:'3 × 20', cue:'before pressing every session including reload days · the higher rep count here is intentional — Saturday is a volume day for shoulder health · the lighter incline press means less rotator cuff stress but face pulls are preventive not reactive · external rotation hard at the end of every rep' },
+        { id:'sat_incline', name:'Incline DB Press', sets:'3 × 10–12', cue:'50% working weight · elbows at 45° to torso throughout · full range of motion — touch the chest at the bottom · supinated grip returns at week 10 of elbow rehab · until then use neutral grip DBs · the incline angle recruits upper chest and anterior delt with slightly less shoulder stress than flat pressing' },
+      ]},
+      { name:'Lower lat + pull', exercises:[
+        { id:'sat_meadows', name:'Meadows Row', sets:'3 × 10/side', cue:'the lower lat insertion is the muscle belly closest to the hip · Meadows row loads it specifically through the elbow driving back and high finish position · this is where lat thickness comes from below the armpit · use straps · go heavy relative to the reload day context — this exercise does not stress the elbow' },
+        { id:'sat_single', name:'Single-Arm Cable Pulldown', sets:'3 × 12', cue:'the key is the cross-body path — pulling toward the opposite hip puts the lat through its fullest functional range · pause at the top in the fully stretched position for 1 second before each rep · lat development requires training in the stretched position · do not shorten the range of motion for more weight' },
+        { id:'sat_straight', name:'Straight-Arm Pulldown', sets:'3 × 15', cue:'arms remain completely straight — any elbow bend removes the lat isolation and introduces the bicep · hinge slightly forward · arc the bar from overhead to thighs · the pause at the top is where the lat is fully lengthened under tension — this is the stimulus · lighter weight than you expect · squeeze hard at the bottom' },
+      ]},
+      { name:'Shoulder + trap', exercises:[
+        { id:'sat_cable_lat', name:'Cable Lateral Raise', sets:'3 × 15–20', cue:'cable provides constant tension through the full range including the bottom where DBs go slack · slight forward lean · lead with elbow · 3-second lowering phase · the bottom stretch position under cable tension is particularly valuable for lateral delt hypertrophy · do not shrug at any point' },
+        { id:'sat_y', name:'Incline Y-Raise', sets:'3 × 15', cue:'lower trapezius isolation — one of the most underdeveloped muscles in the upper body for most people · light weight is appropriate even after months of training because this muscle is rarely loaded directly · the Y position (hands at ~10 and 2 o clock) with thumbs up is critical for lower trap activation · squeeze at the top · this exercise protects the shoulder over the long term by opposing the forward head and rounded shoulder posture of aviation work' },
+      ]},
+      { name:'BFR finisher', exercises:[
+        { id:'sat_bfr_leg', name:'BFR Leg Extensions', sets:'30/15/15/15', cue:'cuff upper thigh · compensates for the reduced compound load of the reload day · the quads get meaningful metabolic stimulus without the spinal compression or joint load of heavier squatting · 20–30% 1RM · 30-sec rest cuff stays on · full extension every rep' },
+        { id:'sat_bfr_curl', name:'BFR Leg Curls', sets:'30/15/15/15', cue:'cuff upper thigh · posterior chain balance to the leg extensions · hamstring BFR produces hypertrophy at loads that do not stress the knee or the hip · 30/15/15/15 · 30-sec rest cuff stays on · controlled through full range' },
+        { id:'sat_bfr_bi', name:'BFR Bicep Curls', sets:'30/15/15/15', cue:'cuff upper arm · 20–30% 1RM · the supination required for standard curls is at a load so light it places essentially zero stress on the lateral epicondyle · this is the only direct bicep work that is safe during the early rehab phase · full supination at the top · slow and controlled lowering' },
+      ]},
+      { name:'Core + Rehab', exercises:[
+        { id:'sat_rev', name:'Reverse Crunch', sets:'3 × 15–20', cue:'the movement is posterior pelvic tilt — curling the tailbone toward the ribcage · the range of motion is small (2–3 inches) but the contraction must be intentional · if you feel this in your hip flexors you are swinging rather than curling · lie flat · knees bent at 90° · do not swing the legs for momentum · the lower rectus fibers are targeted by moving the pelvis toward the ribcage not the ribcage toward the pelvis' },
+        { id:'sat_ab', name:'Ab Wheel Rollout', sets:'3 × 8–12', cue:'kneel start · roll out as far as you can while maintaining a neutral spine with the lower back flat — not arched · pull back from the lats and the lower abs simultaneously · if the lower back arches you have gone too far · progress by extending range gradually · this is one of the highest-load transverse abdominis exercises available' },
+        { id:'sat_ecc', name:'Eccentric Elbow Rehab', sets:'3 × 10', cue:'eccentrics first at 50% of whatever load you were using before this session · 4-sec lowering · use the other hand to return · pain under 3/10 throughout · this is the final item deliberately — the elbow is warm from the full session · if pain exceeded 3/10 at any point during the session reduce load further next week · add 5–10% when two consecutive sessions are completely pain-free' },
+      ]},
+    ]
+  },
+
+};
+
+const REST_DAYS = {
+  Tuesday: {
+    tag: 'Active Recovery', color: '#f59e0b',
+    notes: [
+      { cat: 'Option A — Light cardio', color: '#10b981', items: [
+        'Walk 30–45 min outdoors · easy conversational pace · get sunlight for circadian anchoring',
+        'Cycle or elliptical 20–30 min · Zone 2 only · heart rate 120–140 bpm · you should be able to hold a conversation',
+        'Swim easy laps 20–30 min · low impact · excellent for joint recovery',
+      ]},
+      { cat: 'Option B — Mobility & stretching', color: '#3b82f6', items: [
+        'Hip flexor stretch 2 min/side · counter the squat and step-up hip loading from Monday',
+        'Thoracic rotation 10 reps/side · counteracts forward posture from flying and sitting',
+        'Lat stretch doorframe hang 30 sec × 3 · decompress the spine after heavy pulling',
+        'Elbow tendon: gentle wrist flexor and extensor stretches · passive only · no load',
+        'Hamstring lengthening 60 sec/side · holds not bouncing · complements the hinge days',
+      ]},
+      { cat: 'Recovery protocol', color: '#7c3aed', items: [
+        'Sauna 20 min if available · contributes comparably to Zone 2 for HRV improvement over 8–12 weeks',
+        'Cold plunge after sauna · contrast drives HRV and autonomic recovery',
+        'Prioritize sleep tonight — Wednesday is KLOW + MOTS-c + full training',
+      ]},
+    ]
+  },
+  Thursday: {
+    tag: 'Zone 2 Cardio Day', color: '#f59e0b',
+    notes: [
+      { cat: 'Zone 2 cardio — 30–40 min', color: '#10b981', items: [
+        'Conversational pace — you should be able to speak in full sentences throughout',
+        'Target heart rate 120–140 bpm · if wearing a monitor stay below 75% max HR',
+        'Outdoor options preferred: walk/jog, cycling · sunlight + movement combined',
+        'Indoor: cycle, elliptical, rowing machine, swim · avoid treadmill incline > 3% (hip flexor loading)',
+        'Norwegian 4×4 intervals are for Tue/Sat — today is aerobic base building only',
+      ]},
+      { cat: 'Mobility', color: '#3b82f6', items: [
+        'Post-cardio: hip flexor + quad stretch 90 sec/side · muscles warm now',
+        'Shoulder internal/external rotation with band · 15 reps/direction',
+        'Dead hang from bar 20–30 sec × 3 · spinal decompression · grip light not white-knuckle',
+      ]},
+      { cat: 'Recovery', color: '#7c3aed', items: [
+        'This is a NAC day (600mg × 2) — take morning + evening · liver and mitochondrial support',
+        'Hydration target 3L+ · body water was flagged low on last scan · creatine uptake depends on it',
+        'Sauna if available — doubles as Zone 2 equivalent for HRV adaptation',
+      ]},
+    ]
+  },
+  Sunday: {
+    tag: 'Full Rest Day', color: '#6b7280',
+    notes: [
+      { cat: 'Walk optional', color: '#6b7280', items: [
+        'Easy walk 20–40 min if you feel like it · no structure required · fresh air and sunlight are the goals',
+        'No structured training today — full systemic recovery · glycogen replenishment · tissue repair',
+        'If joints feel stiff: 10 min gentle full-body mobility flow · nothing loaded',
+      ]},
+      { cat: 'Recovery priorities', color: '#7c3aed', items: [
+        'Sleep is the primary adaptation tool — aim for 8+ hrs tonight · this is when SS-31 and the peptide stack does its repair work',
+        'This is a NAC day (600mg × 2) — glutathione replenishment from the weeks training and oxidative load',
+        'Sauna 20 min if available · low-effort high-return for HRV and parasympathetic tone',
+        'Meal timing: eat within 30 min of waking · protein 160–175g even on rest days · muscle protein synthesis runs 24–48 hrs post-training',
+      ]},
+      { cat: 'Mindset', color: '#3b82f6', items: [
+        'Rest days are not lost days — they are when adaptation happens · Monday performance depends on today recovery',
+        'Retatrutide suppresses appetite — eat deliberately even if not hungry · hitting protein on rest days matters',
+      ]},
+    ]
+  },
+};
+
+
+function render() {
+  const c = document.getElementById('content');
+  if (tab === 'today') renderToday(c);
+  else if (tab === 'workout') renderWorkout(c);
+}
+
+function renderToday(c) {
+  const now = new Date();
+  const realTodayIdx = now.getDay();
+  // Allow scrolling days — default to today
+  if (state.todayDayIdx === undefined || state.todayDayIdx === null) {
+    state.todayDayIdx = realTodayIdx;
+  }
+  const dayIdx = state.todayDayIdx;
+  const dayName = DAYS[dayIdx];
+  const isRealToday = dayIdx === realTodayIdx;
+  // Use real today's date for the key so checks persist correctly per calendar date
+  // For past/future days use a synthetic key based on day offset
+  const offsetDays = ((dayIdx - realTodayIdx) + 7) % 7;
+  const keyDate = new Date(now); keyDate.setDate(keyDate.getDate() - ((realTodayIdx - dayIdx + 7) % 7));
+  const todayKey = `${dayName}_${keyDate.toDateString()}`;
+  if (!state.checks[todayKey]) state.checks[todayKey] = {};
+  const checks = state.checks[todayKey];
+
+  // Map duty task IDs to their home-day equivalents so completed home items carry over
+  const dayPfx = dayName.slice(0,3).toLowerCase();
+  const DUTY_HOME_MAP = {
+    duty_nmn:      [`${dayPfx}_nmn`],
+    duty_ss31:     [`${dayPfx}_ss31`],
+    duty_ostarine: [`${dayPfx}_ostarine`],
+    duty_bpc:      [`${dayPfx}_bpc_am`, `${dayPfx}_bpc1`],
+    duty_creatine: [`${dayPfx}_coffee`],
+    duty_protein:  [],
+    duty_hydrate:  [],
+    duty_sleep:    [],
+    duty_mag:      [`${dayPfx}_bed`],
+  };
+
+  // isDone check: for duty mode, check duty ID and any mapped home IDs
+  const isDoneFor = (taskId) => {
+    if (checks[taskId]) return true;
+    if (mode === 'duty' && DUTY_HOME_MAP[taskId]) {
+      return DUTY_HOME_MAP[taskId].some(id => !!checks[id]);
+    }
+    return false;
+  };
+
+  let tasks;
+  if (mode === 'duty') {
+    tasks = getDutyTasks();
+  } else if (mode === 'layover') {
+    // Layover: use home tasks but filter out items not available away from home
+    const homeTasks = DAILY_TASKS[dayName] || [];
+    tasks = homeTasks
+      .filter(t => !t.id.includes('redlight_eve') && !t.id.includes('sauna'))
+      .map(t => {
+        // Replace casein with Frog Fuel
+        if (t.label && t.label.startsWith('Casein')) {
+          return Object.assign({}, t, {
+            label: 'Frog Fuel x2 + evening supps',
+            sub: t.sub ? t.sub.replace('Creatine 5g · Fish oil 2g · ', 'Creatine 5g · Fish oil 2g · ') : t.sub
+          });
+        }
+        return t;
+      });
+  } else {
+    tasks = DAILY_TASKS[dayName] || [];
+  }
+
+  const done = tasks.filter(t => isDoneFor(t.id)).length;
+  const pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+
+  let html = '';
+
+  html += `<div class="macro-grid">
+    <div class="macro-cell"><div class="macro-val" style="color:#6366f1">160–175g</div><div class="macro-label">Protein</div></div>
+    <div class="macro-cell"><div class="macro-val" style="color:#f59e0b">200–250g</div><div class="macro-label">Carbs</div></div>
+    <div class="macro-cell"><div class="macro-val" style="color:#10b981">70–90g</div><div class="macro-label">Fat</div></div>
+    <div class="macro-cell"><div class="macro-val" style="color:#3b82f6">2,800–3,050</div><div class="macro-label">kcal</div></div>
+  </div>`;
+
+  const prevDayName = DAYS[((dayIdx - 1) + 7) % 7];
+  const nextDayName = DAYS[(dayIdx + 1) % 7];
+  html += `<div class="card" style="margin-bottom:8px">
+    <div style="display:flex;align-items:center;border-bottom:1px solid var(--border);padding:4px 0">
+      <button onclick="shiftToday(-1)" style="background:none;border:none;padding:4px 10px;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;flex-shrink:0">&#8592;</button>
+      <div style="flex:1;text-align:center">
+        <span style="font-size:13px;font-weight:600;color:var(--text)">${dayName}${isRealToday?' <span style="font-size:10px;color:var(--green);font-weight:700">TODAY</span>':''}</span>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px">${prevDayName} ← → ${nextDayName}</div>
+      </div>
+      <button onclick="shiftToday(1)" style="background:none;border:none;padding:4px 10px;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;flex-shrink:0">&#8594;</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-row">
+        <span class="progress-label">${mode !== 'home' ? mode.charAt(0).toUpperCase()+mode.slice(1)+' · ' : ''}${done}/${tasks.length} complete</span>
+        <span class="progress-val">${pct}%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+  </div>`;
+
+  const grouped = groupBy(tasks, 'time');
+  for (const [time, items] of Object.entries(grouped)) {
+    html += `<div class="section-label">${time}</div><div class="card">`;
+    items.forEach(task => {
+      const isDone = isDoneFor(task.id);
+      const isCarried = mode === 'duty' && !checks[task.id] && isDone;
+      html += `<div class="task" onclick="${isCarried ? '' : `toggleCheck('${todayKey}','${task.id}')`}" style="${isCarried?'opacity:0.65;cursor:default':''}">
+        <div class="task-check ${isDone?'done':''}" data-id="${task.id}">
+          <svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2"><polyline points="2,6 5,9 10,3"/></svg>
+        </div>
+        <div class="task-body">
+          <div class="task-label${isDone?' done':''}">${task.label}${isCarried?' <span style="font-size:9px;color:var(--green);font-weight:600">done at home</span>':''}</div>
+          ${task.sub ? `<div class="task-sub">${task.sub}</div>` : ''}
+        </div>
+        ${task.badge ? `<div class="task-badge" style="background:${task.color}22;color:${task.color}">${task.badge}</div>` : ''}
+        <div style="width:10px;height:10px;border-radius:2px;background:${task.color};flex-shrink:0"></div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  if (tasks.length === 0) html += '<div class="empty">No protocol data for this day type.</div>';
+  html += '<div style="flex:1"></div>';
+  c.innerHTML = html;
+}
+
+function getDutyTasks() {
+  return [
+    { time:'Duty day', id:'duty_nmn', label:'NMN 1g sublingual', sub:'take when possible · hold under tongue 2–3 min', color:'#f59e0b', badge:'daily' },
+    { time:'Duty day', id:'duty_ss31', label:'SS-31 1mg subQ', sub:'any time · no fasting required', color:'#a855f7', badge:'daily' },
+    { time:'Duty day', id:'duty_ostarine', label:'Ostarine 10mg (1ml)', sub:'with food · do not skip', color:'#6366f1', badge:'daily' },
+    { time:'Duty day', id:'duty_bpc', label:'BPC-157 250–500mcg subQ', sub:'take when able · local to elbow if possible', color:'#10b981', badge:'' },
+    { time:'Duty day', id:'duty_creatine', label:'Creatine 5–10g', sub:'split doses with meals · buffers sleep deprivation', color:'#14b8a6', badge:'' },
+    { time:'Duty day', id:'duty_protein', label:'Protein target 160–175g', sub:'eat deliberately — Retatrutide suppresses appetite', color:'#6366f1', badge:'' },
+    { time:'Duty day', id:'duty_hydrate', label:'Hydrate aggressively', sub:'cabin air dehydrates significantly · minimum 2L', color:'#3b82f6', badge:'' },
+    { time:'On aircraft', id:'duty_hydrate_air', label:'Hydration — active management', sub:'250ml per hour minimum · cabin humidity 10–20% · avoid caffeine 6hrs before crew rest window · electrolytes if available', color:'#3b82f6', badge:'ongoing' },
+    { time:'On aircraft', id:'duty_sleep', label:'Use crew rest bunk', sub:'target 2+ hours · sleep during body-clock night window', color:'#7c3aed', badge:'' },
+    { time:'On aircraft', id:'duty_mag', label:'Sleep stack — 20–30 min before bunk', sub:'Mag glycinate 400mg · Glycine 3g · L-Theanine 200mg · Apigenin 50mg · take before entering bunk not at lights-out · safe for 3-hr crew rest window', color:'#7c3aed', badge:'20–30 min prior' },
+  ];
+}
+
+function toggleCheck(dayKey, taskId) {
+  if (!state.checks[dayKey]) state.checks[dayKey] = {};
+  state.checks[dayKey][taskId] = !state.checks[dayKey][taskId];
+  saveState();
+  render();
+}
+
+function renderWorkout(c) {
+  const WDAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  // Default to today if it's a training day, else Monday
+  if (state.workoutDayIdx === undefined || state.workoutDayIdx === null) {
+    const todayName = DAYS[new Date().getDay()];
+    state.workoutDayIdx = DAYS.indexOf(todayName) !== -1 ? DAYS.indexOf(todayName) : 1;
+  }
+  const dayName = DAYS[state.workoutDayIdx];
+  const workout = WORKOUTS[dayName];
+  const restDay = REST_DAYS[dayName];
+  const wKey = `workout_${dayName}_${new Date().toDateString()}`;
+
+  const prevDay = DAYS[((state.workoutDayIdx - 1) + 7) % 7];
+  const nextDay = DAYS[(state.workoutDayIdx + 1) % 7];
+  const isToday = dayName === DAYS[new Date().getDay()];
+
+  if (!workout) {
+    const rd = restDay || { tag: 'Rest Day', color: '#6b7280', notes: [] };
+    let rhtml = `<div class="card" style="margin-bottom:8px;border-color:${rd.color}44">
+      <div class="card-hdr" style="border-bottom-color:${rd.color}33">
+        <button onclick="shiftWorkout(-1)" style="background:none;border:none;padding:4px 8px;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;flex-shrink:0">&#8592;</button>
+        <div style="flex:1;text-align:center">
+          <div class="card-title" style="color:${rd.color}">${dayName}${isToday?' <span style="font-size:10px;color:var(--green);font-weight:700">TODAY</span>':''}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">${prevDay} ← → ${nextDay}</div>
+        </div>
+        <button onclick="shiftWorkout(1)" style="background:none;border:none;padding:4px 8px;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;flex-shrink:0">&#8594;</button>
+      </div>
+      <div style="font-size:11px;color:${rd.color};font-weight:600;text-align:center;padding:6px 14px">${rd.tag}</div>
+    </div>`;
+    (rd.notes || []).forEach(section => {
+      rhtml += `<div class="section-label">${section.cat}</div><div class="card">`;
+      section.items.forEach((tip, i) => {
+        rhtml += `<div class="task" style="${i<section.items.length-1?'border-bottom:1px solid var(--border)':'border:none'}">
+          <div style="width:6px;height:6px;border-radius:50%;background:${section.color};flex-shrink:0;margin-top:4px;align-self:flex-start"></div>
+          <div class="task-body"><div class="task-sub" style="font-size:12px;line-height:1.55;color:var(--text2)">${tip}</div></div>
+        </div>`;
+      });
+      rhtml += '</div>';
+    });
+    c.innerHTML = rhtml;
+    return;
+  }
+
+  if (!state.weights[wKey]) state.weights[wKey] = {};
+
+  let html = `<div class="card" style="margin-bottom:8px;border-color:${workout.color}44">
+    <div class="card-hdr" style="border-bottom-color:${workout.color}33">
+      <button onclick="shiftWorkout(-1)" style="background:none;border:none;padding:4px 8px;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;flex-shrink:0">&#8592;</button>
+      <div class="card-hdr-left" style="flex:1;justify-content:center;flex-direction:column;align-items:center;text-align:center">
+        <div class="card-title" style="color:${workout.color}">${dayName}${isToday?' <span style="font-size:10px;color:var(--green);font-weight:700">TODAY</span>':''}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px">${prevDay} ← → ${nextDay}</div>
+      </div>
+      <button onclick="shiftWorkout(1)" style="background:none;border:none;padding:4px 8px;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;flex-shrink:0">&#8594;</button>
+    </div>
+    <div style="font-size:11px;color:${workout.color};font-weight:600;text-align:center;padding:4px 14px">${workout.tag}</div>
+    <div style="padding:4px 14px 8px;font-size:11px;color:var(--text3)">
+      BFR cuff: upper arm (arms/shoulders) · upper thigh (legs) · 7/10 tightness · venous occlusion only · feel pressure but retain distal pulse
+    </div>
+  </div>`;
+
+  workout.groups.forEach(group => {
+    html += `<div class="section-label">${group.name}</div><div class="card ex-group">`;
+    group.exercises.forEach((ex, i) => {
+      const shaded = i % 2 === 1;
+
+      // Parse number of sets from sets string e.g. '4 × 6–8' → 4, '30/15/15/15' → 4
+      let numSets = 3; // default
+      const setsStr = ex.sets || '';
+      const multMatch = setsStr.match(/^(\d+)\s*[×x]/);
+      const slashMatch = setsStr.split('/');
+      if (multMatch) {
+        numSets = parseInt(multMatch[1]);
+      } else if (slashMatch.length > 1) {
+        numSets = slashMatch.length;
+      }
+      numSets = Math.min(Math.max(numSets, 1), 6); // clamp 1-6
+
+      // Build per-set inputs
+      let setInputs = '';
+      for (let s = 0; s < numSets; s++) {
+        const wVal = state.weights[wKey][ex.id+'_w'+s] || '';
+        const rVal = state.weights[wKey][ex.id+'_r'+s] || '';
+        setInputs += `<div style="display:flex;align-items:center;gap:3px;margin-bottom:${s<numSets-1?'3':'0'}px">
+          <span style="font-size:9px;color:var(--text3);width:10px;text-align:right;flex-shrink:0">${s+1}</span>
+          <input class="ex-input" type="number" inputmode="decimal" placeholder="wt" value="${wVal}"
+            onchange="logWeight('${wKey}','${ex.id}_w${s}',this.value)" style="width:42px">
+          <span class="ex-x">×</span>
+          <input class="ex-input" type="number" inputmode="numeric" placeholder="reps" value="${rVal}"
+            onchange="logWeight('${wKey}','${ex.id}_r${s}',this.value)" style="width:38px">
+        </div>`;
+      }
+
+      html += `<div class="ex-row" style="${shaded?'background:var(--surf2)':''}">
+        <div style="flex:1;min-width:0">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-cue" style="padding:2px 0 0">${ex.cue}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;margin-left:8px">
+          <div class="ex-sets" style="margin-bottom:4px">${ex.sets}</div>
+          ${setInputs}
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  c.innerHTML = html;
+}
+
+function shiftToday(dir) {
+  const realIdx = new Date().getDay();
+  if (state.todayDayIdx === undefined || state.todayDayIdx === null) state.todayDayIdx = realIdx;
+  state.todayDayIdx = ((state.todayDayIdx + dir) % 7 + 7) % 7;
+  render();
+}
+
+function shiftWorkout(dir) {
+  if (state.workoutDayIdx === undefined || state.workoutDayIdx === null) state.workoutDayIdx = 0;
+  state.workoutDayIdx = ((state.workoutDayIdx + dir) % 7 + 7) % 7;
+  render();
+}
+
+function logWeight(wKey, field, val) {
+  if (!state.weights[wKey]) state.weights[wKey] = {};
+  state.weights[wKey][field] = val;
+  saveState();
+}
+
+function groupBy(arr, key) {
+  const map = {};
+  arr.forEach(item => {
+    if (!map[item[key]]) map[item[key]] = [];
+    map[item[key]].push(item);
+  });
+  return map;
+}
+
+// ── Init ────────────────────────────────────────────────────────────────────
+
+loadState();
+updateClock();
+setInterval(updateClock, 30000);
+initSunTimes();
+render();
+window.addEventListener('online',  () => { document.getElementById('offline-bar').style.display='none'; });
+window.addEventListener('offline', () => { document.getElementById('offline-bar').style.display='block'; });
+if (!navigator.onLine) document.getElementById('offline-bar').style.display='block';
+const todayNameHL = DAYS[new Date().getDay()];
+if (['Monday','Wednesday','Friday','Saturday'].includes(todayNameHL)) {
+  setTimeout(() => { const el = document.getElementById('nav-workout'); if(el) el.style.color='var(--amber)'; }, 100);
+}
+</script>
+</body>
+</html>
